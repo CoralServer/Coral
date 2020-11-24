@@ -16,10 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export interface StreamIPCMessage<IdType extends number, PayloadType> {
-    id: IdType,
-    payload: PayloadType
-}
+import {StreamIPCMessage} from './StreamIPCMessage.ts';
 
 export class StreamIPC {
     /**

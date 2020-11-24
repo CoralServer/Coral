@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {StreamIPCMessage} from "../../core/plugin/StreamIPC.ts";
-import {Plugin1Messages} from "./Plugin1Messages.ts";
-import {BasePlugin} from "../../core/plugin/BasePlugin.ts";
+import {StreamIPCMessage} from '../../core/ipc/StreamIPCMessage.ts';
+import {BasePlugin} from '../../core/plugin/BasePlugin.ts';
+import {ServiceMessage, ServiceMessageID} from '../../core/svc/ServiceMessage.ts';
 
 class Plugin1 extends BasePlugin {
     /**
@@ -32,21 +32,24 @@ class Plugin1 extends BasePlugin {
      */
     public constructor() {
         super();
-
-        setInterval(() => {
-            const msg: StreamIPCMessage<Plugin1Messages, number> = {id: Plugin1Messages.Scheduled, payload: this.n++}
-            this.send(msg);
-        }, 2000);
     }
 
     /**
      * Method called when receiving a message
      */
     protected onMessage(msg: StreamIPCMessage<any, any>) {
-        if (msg.id === Plugin1Messages.Request && msg.payload === 'f in the chat bois') {
-            this.send({id: Plugin1Messages.Reply, payload: 'fffffffff'});
-        } else {
-            this.send({id: Plugin1Messages.Reply, payload: 'no u'});
+        if (typeof msg.payload.uuid === 'string') {
+            const payload: ServiceMessage<number> = msg.payload;
+            if (payload.serviceName === 'coral:test.power') {
+                this.send<ServiceMessageID, ServiceMessage<number>>({
+                    id: ServiceMessageID.SvcResponse,
+                    payload: {
+                        uuid: payload.uuid,
+                        serviceName: payload.serviceName,
+                        data: payload.data * payload.data,
+                    },
+                });
+            }
         }
     }
 }

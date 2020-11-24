@@ -16,8 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export enum Plugin1Messages {
-    Request,
-    Reply,
-    Scheduled
+export enum ServiceMessageID {
+    SvcRequest,
+    SvcResponse,
+}
+
+export interface ServiceMessage<T> {
+    uuid: string,
+    serviceName: string,
+    data: T,
 }

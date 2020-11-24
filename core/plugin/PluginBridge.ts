@@ -18,7 +18,7 @@
 
 import * as Path from 'https://deno.land/std@0.79.0/path/mod.ts';
 
-import {StreamIPC} from './StreamIPC.ts';
+import {StreamIPC} from '../ipc/StreamIPC.ts';
 import {IPluginInfos} from './IPluginInfos.ts';
 import {IDiscoveredPlugin} from './IDiscoveredPlugins.ts';
 
@@ -33,7 +33,7 @@ export class PluginBridge extends StreamIPC {
      * Infos about this plugin
      * @private
      */
-    private readonly pluginInfos: IPluginInfos;
+    private readonly _pluginInfos: IPluginInfos;
 
     /**
      * Constructor for the PluginBridge class
@@ -74,6 +74,13 @@ export class PluginBridge extends StreamIPC {
         // Start receiving
         this.recv();
 
-        this.pluginInfos = discoveredPlugin.infos;
+        this._pluginInfos = discoveredPlugin.infos;
+    }
+
+    /**
+     * Getter for the plugin information
+     */
+    get pluginInfos(): IPluginInfos {
+        return this._pluginInfos;
     }
 }

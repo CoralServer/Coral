@@ -12,6 +12,6 @@
     "file-read"
   ],
   "services": [
-    "coral:test.helloworld"
+    "coral:test.power"
   ]
 }

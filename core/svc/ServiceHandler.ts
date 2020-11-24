@@ -16,19 +16,4 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {StreamIPC} from '../ipc/StreamIPC.ts';
-import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
-
-export abstract class BasePlugin extends StreamIPC {
-    protected constructor() {
-        super(Deno.stdin, Deno.stdout);
-
-        // Register message handler
-        this.addMessageListener(this.onMessage.bind(this));
-
-        // Start receiving
-        this.recv();
-    }
-
-    protected abstract onMessage(msg: StreamIPCMessage<any, any>): void;
-}
+export type ServiceHandler<T, Ans> = (serviceName: string, data: T) => Promise<Ans>;
