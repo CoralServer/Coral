@@ -41,6 +41,12 @@ const main = async () => {
         });
     });
 
+    pluginServiceManager.open('coral:base.ping', (serviceName, data: any) => {
+        return new Promise<any>(resolve => {
+            resolve(data);
+        });
+    });
+
     // Plugin services
     PluginServiceManager.openFromPlugins(pluginServiceManager, plugins);
 

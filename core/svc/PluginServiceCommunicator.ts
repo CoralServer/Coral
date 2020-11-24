@@ -22,9 +22,10 @@ import {ServiceMessage, ServiceMessageID} from './ServiceMessage.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
 import {StreamIPC} from '../ipc/StreamIPC.ts';
 
-interface PendingRequest<T, Ans> {
-    message: ServiceMessage<T>,
-    resolve: (value: Ans) => void,
+interface PendingRequest {
+    message: ServiceMessage<any>,
+    resolve: (value: any) => void,
+    reject: (value: any) => void,
 }
 
 type RequestResponder = (serviceName: string, data: any) => Promise<any>;
@@ -34,7 +35,7 @@ export class PluginServiceCommunicator {
      * Map of requests that are still pending
      * @private
      */
-    private readonly pendingRequests: Map<string, PendingRequest<any, any>> = new Map<string, PendingRequest<any, any>>();
+    private pendingRequests: Map<string, PendingRequest> = new Map<string, PendingRequest>();
 
     /**
      * Method to call when we get a Service request
@@ -55,17 +56,19 @@ export class PluginServiceCommunicator {
      * @param ipc Target to send the response to
      * @param uuid UUID of the response (must be the same as the request UUID)
      * @param serviceName Name of the requested service
+     * @param isError Is the response an error?
      * @param data Response data
      * @private
      */
-    private static sendResponse(ipc: StreamIPC, uuid: string, serviceName: string, data?: any): void {
+    private static sendResponse(ipc: StreamIPC, uuid: string, serviceName: string, isError: boolean, data?: any): void {
         const message: ServiceMessage<any> = {
             uuid: uuid,
             serviceName: serviceName,
+            isError: isError,
             data: data,
         };
 
-        // Send the request to the plugin
+        // Send the response to the plugin
         ipc.send({id: ServiceMessageID.SvcResponse, payload: message});
     }
 
@@ -91,30 +94,6 @@ export class PluginServiceCommunicator {
     }
 
     /**
-     * Function called when we receive a service request
-     * @param ipc Source of the message
-     * @param msg Incoming message
-     * @private
-     */
-    private handleSvcRequest(ipc: StreamIPC, msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
-        if (this._requestResponder !== undefined) {
-            // Wait for the answer
-            this._requestResponder(msg.payload.serviceName, msg.payload.data)
-                .then(value => {
-                    // We got a response from the responder, reply with it
-                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, value);
-                })
-                .catch(() => {
-                    // Request responder failed, reply with undefined data
-                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName);
-                });
-        } else {
-            // We don't have a request responder, reply with undefined data
-            PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName);
-        }
-    }
-
-    /**
      * Sends a Service request through the specified IPC
      * @param ipc Target to reach
      * @param serviceName Name of the service to dispatch the data to
@@ -125,12 +104,17 @@ export class PluginServiceCommunicator {
             const id = setTimeout(() => {
                 // Reject the promise after 5s
                 clearTimeout(id);
-                reject();
-            }, 5000);
+                reject('Timed out');
+            }, 2000);
         });
 
         let requestPromise: Promise<Ans> = new Promise<Ans>((resolve, reject) => {
-            const message: ServiceMessage<T> = {uuid: v4.generate(), serviceName: serviceName, data: data};
+            const message: ServiceMessage<T> = {
+                uuid: v4.generate(),
+                serviceName: serviceName,
+                isError: false,
+                data: data,
+            };
 
             // Send the request to the plugin
             ipc.send({id: ServiceMessageID.SvcRequest, payload: message})
@@ -138,6 +122,7 @@ export class PluginServiceCommunicator {
                     this.pendingRequests.set(message.uuid, {
                         message: message,
                         resolve: resolve,
+                        reject: reject,
                     });
                 })
                 .catch(reason => {
@@ -149,15 +134,43 @@ export class PluginServiceCommunicator {
     }
 
     /**
+     * Function called when we receive a service request
+     * @param ipc Source of the message
+     * @param msg Incoming message
+     * @private
+     */
+    private handleSvcRequest(ipc: StreamIPC, msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
+        if (this._requestResponder !== undefined) {
+            // Wait for the answer
+            this._requestResponder(msg.payload.serviceName, msg.payload.data)
+                .then(value => {
+                    // We got a response from the responder, reply with it
+                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, false, value);
+                })
+                .catch(() => {
+                    // Request responder failed, reply with undefined data
+                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, true);
+                });
+        } else {
+            // We don't have a request responder, reply with undefined data
+            PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, true);
+        }
+    }
+
+    /**
      * Function called when we receive a service response
      * @param msg Incoming message
      * @private
      */
     private handleSvcResponse(msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
-        const pendingRequest: PendingRequest<any, any> | undefined = this.pendingRequests.get(msg.payload.uuid);
+        const pendingRequest: PendingRequest | undefined = this.pendingRequests.get(msg.payload.uuid);
         if (pendingRequest !== undefined) {
             // Resolve the request with the response
-            pendingRequest.resolve(msg.payload.data);
+            if (!msg.payload.isError) {
+                pendingRequest.resolve(msg.payload.data);
+            } else {
+                pendingRequest.reject(msg.payload.data);
+            }
 
             this.pendingRequests.delete(msg.payload.uuid);
         }

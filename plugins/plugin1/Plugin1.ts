@@ -41,6 +41,17 @@ class Plugin1 extends BasePlugin {
         // Setup the service communicator
         this.addMessageListener(this.pluginServiceCommunicator.onMessage.bind(this.pluginServiceCommunicator, this));
         this.pluginServiceCommunicator.requestResponder = this.onServiceRequest.bind(this);
+
+        let i = 0;
+        setInterval(() => {
+            this.pluginServiceCommunicator.send(this, 'coral:base.ping', ++i)
+                .then((value) => {
+                    console.error(value + ' is good');
+                })
+                .catch((reason) => {
+                    console.error(i + ' is NOT good: ' + reason);
+                });
+        }, 1);
     }
 
     /**
@@ -48,7 +59,7 @@ class Plugin1 extends BasePlugin {
      * @protected
      */
     protected onMessage(msg: StreamIPCMessage<any, any>): void {
-
+        // console.error(msg);
     }
 
     /**
@@ -60,16 +71,13 @@ class Plugin1 extends BasePlugin {
      */
     protected onServiceRequest(serviceName: string, data: any): Promise<any> {
         if (serviceName === 'coral:test.power') {
-            this.pluginServiceCommunicator.send(this, 'coral:base.log', 'coucou');
             return new Promise<any>(resolve => {
                 resolve(data * data);
             });
         }
 
         // No such service, send a rejected promise
-        return new Promise<any>((resolve, reject) => {
-            reject();
-        });
+        return Promise.reject();
     }
 }
 

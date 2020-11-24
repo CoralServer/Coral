@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import Mutex from 'https://deno.land/x/await_mutex@v1.0.1/mod.ts';
+
 import {StreamIPCMessage} from './StreamIPCMessage.ts';
 
 export class StreamIPC {
@@ -36,6 +38,12 @@ export class StreamIPC {
      * @private
      */
     private onMessageCb: Array<(msg: StreamIPCMessage<any, any>) => void> = [];
+
+    /**
+     * Mutex for preventing concurrent access to the writer
+     * @private
+     */
+    private writeMutex: Mutex = new Mutex();
 
     /**
      * Constructor for the StreamIPC class
@@ -76,30 +84,6 @@ export class StreamIPC {
     }
 
     /**
-     * Sends a message to the plugin stdin
-     * @param msg Message to send
-     * @private
-     */
-    public send<Ids extends number, T>(msg: StreamIPCMessage<Ids, T>): Promise<number> {
-        // Check that we have a writer
-        if (this._writer === undefined) {
-            return new Promise<number>((resolve, reject) => {
-                reject();
-            });
-        }
-
-        // Stringify the message to send
-        const msgString: string = JSON.stringify(msg) + '\0';
-
-        // Send the message
-        let outBuf: Uint8Array = new Uint8Array(msgString.length);
-        for (let i = 0; i < msgString.length; ++i)
-            outBuf[i] = msgString.charCodeAt(i);
-
-        return this._writer.write(outBuf);
-    }
-
-    /**
      * Adds a listener for incoming messages
      * @param listener Listener to add
      */
@@ -116,6 +100,42 @@ export class StreamIPC {
     }
 
     /**
+     * Sends a message to the plugin stdin
+     * @param msg Message to send
+     * @private
+     */
+    public async send<Ids extends number, T>(msg: StreamIPCMessage<Ids, T>): Promise<number> {
+        // Acquire mutex
+        const id = await this.writeMutex.acquire();
+
+        // Check that we have a writer
+        if (this._writer === undefined) {
+            return Promise.reject();
+        }
+
+        // Stringify the message to send
+        const msgString: string = JSON.stringify(msg) + '\0';
+
+        // Send the message
+        let p: number | undefined;
+        try {
+            p = await this._writer.write(new TextEncoder().encode(msgString));
+        } catch (e) {
+            p = undefined;
+        } finally {
+            // Release the mutex
+            this.writeMutex.release(id);
+        }
+
+        // Resolve/Reject result
+        if (p !== undefined) {
+            return Promise.resolve(p);
+        } else {
+            return Promise.reject();
+        }
+    }
+
+    /**
      * Receives a message from the plugin stdout
      */
     protected recv(): void {
@@ -125,19 +145,26 @@ export class StreamIPC {
             .then(n => {
                 if (n) {
                     // We've got some data to process
-                    for (let i = 0; i < n; ++i) {
-                        if (this.recvArray[i] !== 0x00) {
-                            this.currentMessage += String.fromCharCode(this.recvArray[i]);
-                        } else {
-                            // Message is finished, call the buffers
-                            const msg: StreamIPCMessage<any, any> = JSON.parse(this.currentMessage);
-                            for (const value of this.onMessageCb)
-                                value(msg);
+                    const decodedString: string = new TextDecoder().decode(this.recvArray.subarray(0, n));
 
-                            // Clear the current message buffer
-                            this.currentMessage = '';
-                        }
+                    // Loop while we find \0 chars in the string
+                    let i: number = 0;
+                    let start: number = 0;
+                    while ((i = decodedString.indexOf('\0', start)) !== -1) {
+                        // We've got an entire message
+                        this.currentMessage += decodedString.substring(start, i);
+                        const msg: StreamIPCMessage<any, any> = JSON.parse(this.currentMessage);
+
+                        // Call the message callbacks
+                        for (const value of this.onMessageCb)
+                            value(msg);
+
+                        // Reset the message, start over
+                        this.currentMessage = '';
+                        start = i + 1;
                     }
+
+                    this.currentMessage += decodedString.substring(start);
                 }
 
                 // Receive once again

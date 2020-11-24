@@ -47,15 +47,13 @@ export class ServiceManager {
      * @param serviceName Name of the service to send a message to
      * @param data Data to send to the service
      */
-    public dispatch<T, Ans>(serviceName: string, data: T): Promise<Ans> {
+    public dispatch(serviceName: string, data: any): Promise<any> {
         const service: ServiceHandler<any, any> | undefined = this.services.get(serviceName);
         if (service !== undefined) {
             return service(serviceName, data);
         }
 
         // Return a rejected promise if we can't find the service name
-        return new Promise<Ans>((resolve, reject) => {
-            reject();
-        });
+        return Promise.reject();
     }
 }
