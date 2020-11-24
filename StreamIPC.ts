@@ -27,6 +27,13 @@ export class StreamIPC {
      * @private
      */
     private readonly recvArray: Uint8Array = new Uint8Array(128);
+
+    /**
+     * String buffer for the current message being processed
+     * @private
+     */
+    private currentMessage: string = '';
+
     /**
      * Array of functions to call when receiving a new message
      * @private
@@ -121,14 +128,19 @@ export class StreamIPC {
             .then(n => {
                 if (n) {
                     // We've got some data to process
-                    let s: string = '';
-                    for (let i = 0; i < ((n === this.recvArray.length) ? n : n - 1); ++i)
-                        s += String.fromCharCode(this.recvArray[i]);
+                    for (let i = 0; i < n; ++i) {
+                        if (this.recvArray[i] !== 0x00) {
+                            this.currentMessage += String.fromCharCode(this.recvArray[i]);
+                        } else {
+                            // Message is finished, call the buffers
+                            const msg: StreamIPCMessage<any, any> = JSON.parse(this.currentMessage);
+                            for (const value of this.onMessageCb)
+                                value(msg);
 
-                    // Call the listeners
-                    const msg: StreamIPCMessage<any, any> = JSON.parse(s);
-                    for (const value of this.onMessageCb)
-                        value(msg);
+                            // Clear the current message buffer
+                            this.currentMessage = '';
+                        }
+                    }
                 }
 
                 // Receive once again
