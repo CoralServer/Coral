@@ -37,14 +37,17 @@ class Plugin1 extends BasePlugin {
             const msg: StreamIPCMessage<Plugin1Messages, number> = {id: Plugin1Messages.Scheduled, payload: this.n++}
             this.send(msg);
         }, 2000);
+    }
 
-        this.addMessageListener((msg) => {
-            if (msg.id === Plugin1Messages.Request && msg.payload === 'f in the chat bois') {
-                this.send({id: Plugin1Messages.Reply, payload: 'fffffffff'});
-            } else {
-                this.send({id: Plugin1Messages.Reply, payload: 'no u'});
-            }
-        });
+    /**
+     * Method called when receiving a message
+     */
+    protected onMessage(msg: StreamIPCMessage<any, any>) {
+        if (msg.id === Plugin1Messages.Request && msg.payload === 'f in the chat bois') {
+            this.send({id: Plugin1Messages.Reply, payload: 'fffffffff'});
+        } else {
+            this.send({id: Plugin1Messages.Reply, payload: 'no u'});
+        }
     }
 }
 

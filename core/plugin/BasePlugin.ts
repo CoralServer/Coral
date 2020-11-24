@@ -16,13 +16,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {StreamIPC} from "./StreamIPC.ts";
+import {StreamIPC, StreamIPCMessage} from "./StreamIPC.ts";
 
-export class BasePlugin extends StreamIPC {
-    public constructor() {
+export abstract class BasePlugin extends StreamIPC {
+    protected constructor() {
         super(Deno.stdin, Deno.stdout);
+
+        // Register message handler
+        this.addMessageListener(this.onMessage.bind(this));
 
         // Start receiving
         this.recv();
     }
+
+    protected abstract onMessage(msg: StreamIPCMessage<any, any>): void;
 }
