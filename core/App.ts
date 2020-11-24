@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {PluginBridge} from "./PluginBridge.ts";
-import {Plugin1Messages} from "./plugins/plugin1/Plugin1Messages.ts";
+import {PluginBridge} from "./plugin/PluginBridge.ts";
+import {Plugin1Messages} from "../plugins/plugin1/Plugin1Messages.ts";
 
 interface IPluginJson {
     id: string,

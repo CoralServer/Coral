@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {StreamIPCMessage} from "../../StreamIPC.ts";
+import {StreamIPCMessage} from "../../core/plugin/StreamIPC.ts";
 import {Plugin1Messages} from "./Plugin1Messages.ts";
-import {BasePlugin} from "../../BasePlugin.ts";
+import {BasePlugin} from "../../core/plugin/BasePlugin.ts";
 
 class Plugin1 extends BasePlugin {
     /**
