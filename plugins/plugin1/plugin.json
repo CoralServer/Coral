@@ -1,0 +1,15 @@
+{
+  "id": "coral:test",
+  "entry": "plugin1.ts",
+  "minProtocolVersion": 751,
+  "dependencies": [
+    {
+      "required": true,
+      "id": "coral:base"
+    }
+  ],
+  "permissions": [
+    "file-read",
+    "http-read"
+  ]
+}
