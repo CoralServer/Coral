@@ -16,12 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {v4} from 'https://deno.land/std@0.79.0/uuid/mod.ts';
-
 import {ServiceManager} from './ServiceManager.ts';
 import {PluginBridge} from '../plugin/PluginBridge.ts';
-import {ServiceMessage, ServiceMessageID} from './ServiceMessage.ts';
-import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
+import {ServiceMessage} from './ServiceMessage.ts';
+import {PluginServiceCommunicator} from './PluginServiceCommunicator.ts';
 
 interface PendingRequest<T, Ans> {
     message: ServiceMessage<T>,
@@ -33,6 +31,11 @@ export class PluginServiceManager extends ServiceManager {
      * Map of requests that are still pending
      */
     readonly pendingRequests: Map<string, PendingRequest<any, any>> = new Map<string, PendingRequest<any, any>>();
+
+    /**
+     * Communicator between the server and plugins through the Service protocol
+     */
+    readonly serviceCommunicator: PluginServiceCommunicator = new PluginServiceCommunicator();
 
     /**
      * Open services from a map of plugins
@@ -54,55 +57,10 @@ export class PluginServiceManager extends ServiceManager {
      */
     public openFromPlugin(plugin: PluginBridge): void {
         for (const service of plugin.pluginInfos.services.keys()) {
-            this.open(service, this.onServiceDispatchHandler.bind(this, plugin));
+            this.open(service, this.serviceCommunicator.send.bind(this.serviceCommunicator, plugin));
         }
 
         // Add listener to handle svc messages
-        plugin.addMessageListener((msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>) => {
-            if (typeof msg.payload.uuid === 'string') {
-                const pendingRequest: PendingRequest<any, any> | undefined = this.pendingRequests.get(msg.payload.uuid);
-                if (pendingRequest !== undefined) {
-                    // Resolve the request with the response
-                    pendingRequest.resolve(msg.payload.data);
-
-                    this.pendingRequests.delete(msg.payload.uuid);
-                }
-            }
-        });
-    }
-
-    /**
-     * Handler for the service message dispatcher
-     * @param plugin Plugin to send the service message to
-     * @param serviceName Name of the service to dispatch the data to
-     * @param data Data to dispatch
-     * @private
-     */
-    private onServiceDispatchHandler<T, Ans>(plugin: PluginBridge, serviceName: string, data: T): Promise<Ans> {
-        let timeoutPromise: Promise<Ans> = new Promise<Ans>((resolve, reject) => {
-            const id = setTimeout(() => {
-                // Reject the promise after 5s
-                clearTimeout(id);
-                reject();
-            }, 5000);
-        });
-
-        let requestPromise: Promise<Ans> = new Promise<Ans>((resolve, reject) => {
-            const message: ServiceMessage<T> = {uuid: v4.generate(), serviceName: serviceName, data: data};
-
-            // Send the request to the plugin
-            plugin.send({id: ServiceMessageID.SvcRequest, payload: message})
-                .then(() => {
-                    this.pendingRequests.set(message.uuid, {
-                        message: message,
-                        resolve: resolve,
-                    });
-                })
-                .catch(reason => {
-                    reject(reason);
-                });
-        });
-
-        return Promise.race([timeoutPromise, requestPromise]);
+        plugin.addMessageListener(this.serviceCommunicator.onMessage.bind(this.serviceCommunicator));
     }
 }
