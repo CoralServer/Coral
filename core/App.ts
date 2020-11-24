@@ -16,43 +16,31 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {PluginBridge} from "./plugin/PluginBridge.ts";
-import {Plugin1Messages} from "../plugins/plugin1/Plugin1Messages.ts";
+import {PluginBridge} from './plugin/PluginBridge.ts';
+import {PluginDiscoverer} from './plugin/PluginDiscoverer.ts';
+import {PluginLoader} from './plugin/PluginLoader.ts';
 
-interface IPluginJson {
-    id: string,
-    entry: string,
-}
+const APP_VERSION: string = '0.1.0';
 
 const main = async () => {
-    let p: PluginBridge;
+    console.log('Starting Coral server version ' + APP_VERSION);
 
-    for (const dirEntry of Deno.readDirSync('plugins')) {
-        const pluginPath: string = 'plugins/' + dirEntry.name;
-        if (dirEntry.isDirectory && Deno.statSync(pluginPath + '/plugin.json')) {
-            const jsonData: string = Deno.readTextFileSync(pluginPath + '/plugin.json');
-            const pluginJson: IPluginJson = JSON.parse(jsonData);
+    // Discover and load plugins from the plugins/ directory
+    const discoveredPlugins = PluginDiscoverer.discoverPlugins('./plugins');
+    const plugins: Map<string, PluginBridge> = PluginLoader.loadPlugins(discoveredPlugins);
 
-            const pluginEntryPath: string = pluginPath + '/' + pluginJson.entry;
-            p = new PluginBridge(pluginEntryPath);
-
-            p.addMessageListener((msg) => {
-                // Log incoming messages from the plugin
-                console.log(msg);
-            });
-
-            p.send({id: Plugin1Messages.Request, payload: 'f in the chat bois'});
-
-            // Dynamic import lol
-            // let w = await import('./' + pluginEntryPath);
-            // console.log(w);
-        }
+    // Test plugin communication
+    await plugins.get('coral:test')?.send({id: 0, payload: 'f in the chat bois'});
+    for (const plugin of plugins.values()) {
+        plugin.addMessageListener(msg => {
+            console.log(msg);
+        });
     }
 
     // Server tick
     setInterval(() => {
         // Do nothing rn...
     }, 50);
-}
+};
 
 main();

@@ -9,7 +9,9 @@
     }
   ],
   "permissions": [
-    "file-read",
-    "http-read"
+    "file-read"
+  ],
+  "services": [
+    "coral:test.helloworld"
   ]
 }

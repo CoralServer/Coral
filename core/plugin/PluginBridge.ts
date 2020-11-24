@@ -16,7 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {StreamIPC} from "./StreamIPC.ts";
+import * as Path from 'https://deno.land/std@0.79.0/path/mod.ts';
+
+import {StreamIPC} from './StreamIPC.ts';
+import {IPluginInfos} from './IPluginInfos.ts';
+import {IDiscoveredPlugin} from './IDiscoveredPlugins.ts';
 
 export class PluginBridge extends StreamIPC {
     /**
@@ -26,21 +30,38 @@ export class PluginBridge extends StreamIPC {
     private readonly pluginProcess: Deno.Process;
 
     /**
-     * Constructor for the PluginBridge class
-     * @param path Path to the entry file of the plugin to launch
+     * Infos about this plugin
+     * @private
      */
-    public constructor(path: string) {
+    private readonly pluginInfos: IPluginInfos;
+
+    /**
+     * Constructor for the PluginBridge class
+     * @param discoveredPlugin Discovered plugin to launch
+     */
+    public constructor(discoveredPlugin: IDiscoveredPlugin) {
         super(undefined, undefined);
+
+        // Generate plugin run cmd
+        let pluginCmd: Array<string> = ['deno', 'run'];
+
+        // Add permissions
+        if (discoveredPlugin.infos.permissions.has('file-read'))
+            pluginCmd.push('--allow-read=./');
+        if (discoveredPlugin.infos.permissions.has('file-write'))
+            pluginCmd.push('--allow-write=./');
+        if (discoveredPlugin.infos.permissions.has('hrtime'))
+            pluginCmd.push('--allow-hrtime');
+        if (discoveredPlugin.infos.permissions.has('network'))
+            pluginCmd.push('--allow-net');
+
+        pluginCmd.push(Path.join(discoveredPlugin.path, discoveredPlugin.infos.entry));
 
         // Launch the subprocess
         this.pluginProcess = Deno.run({
-            cmd: [
-                'deno',
-                'run',
-                path
-            ],
+            cmd: pluginCmd,
             stdout: 'piped',
-            stdin: 'piped'
+            stdin: 'piped',
         });
 
         // Update reader & writer
@@ -52,5 +73,7 @@ export class PluginBridge extends StreamIPC {
 
         // Start receiving
         this.recv();
+
+        this.pluginInfos = discoveredPlugin.infos;
     }
 }
