@@ -30,11 +30,22 @@ const main = async () => {
     const discoveredPlugins = PluginDiscoverer.discoverPlugins('./plugins');
     const plugins: Map<string, PluginBridge> = PluginLoader.loadPlugins(discoveredPlugins);
 
-    // Open plugin services
+    // Start services
     const pluginServiceManager: PluginServiceManager = new PluginServiceManager();
+
+    // Local services
+    pluginServiceManager.open('coral:base.log', (serviceName: string, data: string) => {
+        return new Promise<void>(resolve => {
+            console.log(data);
+            resolve();
+        });
+    });
+
+    // Plugin services
     PluginServiceManager.openFromPlugins(pluginServiceManager, plugins);
 
-    pluginServiceManager.dispatch('coral:test.power', 6)
+    // Test services
+    pluginServiceManager.dispatch('coral:test.power', 5)
         .then(value => {
             console.log('Message dispatched: ' + value);
         })
@@ -43,11 +54,11 @@ const main = async () => {
         });
 
     // Test plugin communication
-    for (const plugin of plugins.values()) {
-        plugin.addMessageListener(msg => {
-            console.log(msg);
-        });
-    }
+    // for (const plugin of plugins.values()) {
+    //     plugin.addMessageListener(msg => {
+    //         console.log(msg);
+    //     });
+    // }
 
     // Server tick
     setInterval(() => {

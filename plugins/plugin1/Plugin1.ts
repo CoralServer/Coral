@@ -18,9 +18,14 @@
 
 import {StreamIPCMessage} from '../../core/ipc/StreamIPCMessage.ts';
 import {BasePlugin} from '../../core/plugin/BasePlugin.ts';
-import {ServiceMessage, ServiceMessageID} from '../../core/svc/ServiceMessage.ts';
+import {PluginServiceCommunicator} from '../../core/svc/PluginServiceCommunicator.ts';
 
 class Plugin1 extends BasePlugin {
+    /**
+     * Communicator between the plugin and the server through the Service protocol
+     */
+    private pluginServiceCommunicator: PluginServiceCommunicator = new PluginServiceCommunicator();
+
     /**
      * Some member variable...
      * @private
@@ -32,25 +37,39 @@ class Plugin1 extends BasePlugin {
      */
     public constructor() {
         super();
+
+        // Setup the service communicator
+        this.addMessageListener(this.pluginServiceCommunicator.onMessage.bind(this.pluginServiceCommunicator, this));
+        this.pluginServiceCommunicator.requestResponder = this.onServiceRequest.bind(this);
     }
 
     /**
      * Method called when receiving a message
+     * @protected
      */
-    protected onMessage(msg: StreamIPCMessage<any, any>) {
-        if (typeof msg.payload.uuid === 'string') {
-            const payload: ServiceMessage<number> = msg.payload;
-            if (payload.serviceName === 'coral:test.power') {
-                this.send<ServiceMessageID, ServiceMessage<number>>({
-                    id: ServiceMessageID.SvcResponse,
-                    payload: {
-                        uuid: payload.uuid,
-                        serviceName: payload.serviceName,
-                        data: payload.data * payload.data,
-                    },
-                });
-            }
+    protected onMessage(msg: StreamIPCMessage<any, any>): void {
+
+    }
+
+    /**
+     * Method called when we receive a service request
+     * @param serviceName Name of the service that was requested
+     * @param data Data of the request
+     * @returns The data to reply to this request
+     * @protected
+     */
+    protected onServiceRequest(serviceName: string, data: any): Promise<any> {
+        if (serviceName === 'coral:test.power') {
+            this.pluginServiceCommunicator.send(this, 'coral:base.log', 'coucou');
+            return new Promise<any>(resolve => {
+                resolve(data * data);
+            });
         }
+
+        // No such service, send a rejected promise
+        return new Promise<any>((resolve, reject) => {
+            reject();
+        });
     }
 }
 

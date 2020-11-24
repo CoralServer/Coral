@@ -24,5 +24,5 @@ export enum ServiceMessageID {
 export interface ServiceMessage<T> {
     uuid: string,
     serviceName: string,
-    data: T,
+    data?: T,
 }

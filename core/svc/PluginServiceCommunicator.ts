@@ -27,25 +27,90 @@ interface PendingRequest<T, Ans> {
     resolve: (value: Ans) => void,
 }
 
+type RequestResponder = (serviceName: string, data: any) => Promise<any>;
+
 export class PluginServiceCommunicator {
     /**
      * Map of requests that are still pending
+     * @private
      */
-    readonly pendingRequests: Map<string, PendingRequest<any, any>> = new Map<string, PendingRequest<any, any>>();
+    private readonly pendingRequests: Map<string, PendingRequest<any, any>> = new Map<string, PendingRequest<any, any>>();
+
+    /**
+     * Method to call when we get a Service request
+     * @private
+     */
+    private _requestResponder?: RequestResponder;
+
+    /**
+     * Setter for the request responder
+     * @param value New request responder
+     */
+    public set requestResponder(value: RequestResponder) {
+        this._requestResponder = value;
+    }
+
+    /**
+     * Sends a Service response
+     * @param ipc Target to send the response to
+     * @param uuid UUID of the response (must be the same as the request UUID)
+     * @param serviceName Name of the requested service
+     * @param data Response data
+     * @private
+     */
+    private static sendResponse(ipc: StreamIPC, uuid: string, serviceName: string, data?: any): void {
+        const message: ServiceMessage<any> = {
+            uuid: uuid,
+            serviceName: serviceName,
+            data: data,
+        };
+
+        // Send the request to the plugin
+        ipc.send({id: ServiceMessageID.SvcResponse, payload: message});
+    }
 
     /**
      * Function called when a new messages arrives to the communicator
+     * @param ipc Source of the message
      * @param msg Incoming message
      */
-    public onMessage(msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
-        if (typeof msg.payload.uuid === 'string') {
-            const pendingRequest: PendingRequest<any, any> | undefined = this.pendingRequests.get(msg.payload.uuid);
-            if (pendingRequest !== undefined) {
-                // Resolve the request with the response
-                pendingRequest.resolve(msg.payload.data);
+    public onMessage(ipc: StreamIPC, msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
+        // We only want to parse Service requests/responses
+        if (msg.id !== ServiceMessageID.SvcRequest && msg.id !== ServiceMessageID.SvcResponse) return;
 
-                this.pendingRequests.delete(msg.payload.uuid);
+        // Check that we've got a UUID
+        if (typeof msg.payload.uuid === 'string') {
+            if (msg.id === ServiceMessageID.SvcRequest) {
+                // Someone from the outside world requested our service, reply to them
+                this.handleSvcRequest(ipc, msg);
+            } else if (msg.id === ServiceMessageID.SvcResponse) {
+                // Response to a pending request, resolve it
+                this.handleSvcResponse(msg);
             }
+        }
+    }
+
+    /**
+     * Function called when we receive a service request
+     * @param ipc Source of the message
+     * @param msg Incoming message
+     * @private
+     */
+    private handleSvcRequest(ipc: StreamIPC, msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
+        if (this._requestResponder !== undefined) {
+            // Wait for the answer
+            this._requestResponder(msg.payload.serviceName, msg.payload.data)
+                .then(value => {
+                    // We got a response from the responder, reply with it
+                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, value);
+                })
+                .catch(() => {
+                    // Request responder failed, reply with undefined data
+                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName);
+                });
+        } else {
+            // We don't have a request responder, reply with undefined data
+            PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName);
         }
     }
 
@@ -81,5 +146,20 @@ export class PluginServiceCommunicator {
         });
 
         return Promise.race([timeoutPromise, requestPromise]);
+    }
+
+    /**
+     * Function called when we receive a service response
+     * @param msg Incoming message
+     * @private
+     */
+    private handleSvcResponse(msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
+        const pendingRequest: PendingRequest<any, any> | undefined = this.pendingRequests.get(msg.payload.uuid);
+        if (pendingRequest !== undefined) {
+            // Resolve the request with the response
+            pendingRequest.resolve(msg.payload.data);
+
+            this.pendingRequests.delete(msg.payload.uuid);
+        }
     }
 }

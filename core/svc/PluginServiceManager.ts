@@ -18,24 +18,23 @@
 
 import {ServiceManager} from './ServiceManager.ts';
 import {PluginBridge} from '../plugin/PluginBridge.ts';
-import {ServiceMessage} from './ServiceMessage.ts';
 import {PluginServiceCommunicator} from './PluginServiceCommunicator.ts';
 
-interface PendingRequest<T, Ans> {
-    message: ServiceMessage<T>,
-    resolve: (value: Ans) => void,
-}
-
 export class PluginServiceManager extends ServiceManager {
-    /**
-     * Map of requests that are still pending
-     */
-    readonly pendingRequests: Map<string, PendingRequest<any, any>> = new Map<string, PendingRequest<any, any>>();
-
     /**
      * Communicator between the server and plugins through the Service protocol
      */
     readonly serviceCommunicator: PluginServiceCommunicator = new PluginServiceCommunicator();
+
+    /**
+     * Constructor of the PluginServiceManager class
+     */
+    constructor() {
+        super();
+
+        // Set the request responder of the service communicator
+        this.serviceCommunicator.requestResponder = this.onServiceRequest.bind(this);
+    }
 
     /**
      * Open services from a map of plugins
@@ -61,6 +60,17 @@ export class PluginServiceManager extends ServiceManager {
         }
 
         // Add listener to handle svc messages
-        plugin.addMessageListener(this.serviceCommunicator.onMessage.bind(this.serviceCommunicator));
+        plugin.addMessageListener(this.serviceCommunicator.onMessage.bind(this.serviceCommunicator, plugin));
+    }
+
+    /**
+     * Method called when we receive a service request
+     * @param serviceName Name of the service that was requested
+     * @param data Data of the request
+     * @returns The data to reply to this request
+     * @protected
+     */
+    private onServiceRequest(serviceName: string, data: any): Promise<any> {
+        return this.dispatch(serviceName, data);
     }
 }
