@@ -23,58 +23,67 @@ import {PluginServiceManager} from './svc/PluginServiceManager.ts';
 
 const APP_VERSION: string = '0.1.0';
 
-const main = async () => {
-  console.log('Starting Coral server version ' + APP_VERSION);
+/**
+ * Core server application
+ */
+abstract class App {
+    /**
+     * The main() method of the core server
+     */
+    public static main(): void {
+        console.log('Starting Coral server version ' + APP_VERSION);
 
-  // Discover and load plugins from the plugins/ directory
-  const discoveredPlugins = PluginDiscoverer.discoverPlugins('./plugins');
-  const plugins: Map<string, PluginBridge> = PluginLoader.loadPlugins(
-      discoveredPlugins,
-  );
+        // Discover and load plugins from the plugins/ directory
+        const discoveredPlugins = PluginDiscoverer.discoverPlugins('./plugins');
+        const plugins: Map<string, PluginBridge> = PluginLoader.loadPlugins(
+            discoveredPlugins,
+        );
 
-  // Start services
-  const pluginServiceManager: PluginServiceManager = new PluginServiceManager();
+        // Start services
+        const pluginServiceManager: PluginServiceManager = new PluginServiceManager();
 
-  // Local services
-  pluginServiceManager.open(
-      'coral:base.log',
-      (serviceName: string, data: string) => {
-        return new Promise<void>((resolve) => {
-          console.log(data);
-          resolve();
+        // Local services
+        pluginServiceManager.open(
+            'coral:base.log',
+            (serviceName: string, data: string) => {
+                return new Promise<void>((resolve) => {
+                    console.log(data);
+                    resolve();
+                });
+            },
+        );
+
+        pluginServiceManager.open('coral:base.ping', (serviceName, data: any) => {
+            return new Promise<any>((resolve) => {
+                resolve(data);
+            });
         });
-      },
-  );
 
-  pluginServiceManager.open('coral:base.ping', (serviceName, data: any) => {
-    return new Promise<any>((resolve) => {
-      resolve(data);
-    });
-  });
+        // Plugin services
+        PluginServiceManager.openFromPlugins(pluginServiceManager, plugins);
 
-  // Plugin services
-  PluginServiceManager.openFromPlugins(pluginServiceManager, plugins);
+        // Test services
+        pluginServiceManager.dispatch('coral:test.power', 5)
+            .then((value) => {
+                console.log('Message dispatched: ' + value);
+            })
+            .catch((reason) => {
+                console.error('Message NOT dispatched');
+            });
 
-    // Test services
-  pluginServiceManager.dispatch('coral:test.power', 5)
-      .then((value) => {
-        console.log('Message dispatched: ' + value);
-      })
-      .catch((reason) => {
-        console.error('Message NOT dispatched');
-      });
+        // Test plugin communication
+        // for (const plugin of plugins.values()) {
+        //     plugin.addMessageListener(msg => {
+        //         console.log(msg);
+        //     });
+        // }
 
-    // Test plugin communication
-    // for (const plugin of plugins.values()) {
-    //     plugin.addMessageListener(msg => {
-    //         console.log(msg);
-    //     });
-    // }
+        // Server tick
+        setInterval(() => {
+            // Do nothing rn...
+        }, 50);
+    }
+}
 
-    // Server tick
-    setInterval(() => {
-        // Do nothing rn...
-    }, 50);
-};
-
-main();
+// It all starts here
+App.main();
