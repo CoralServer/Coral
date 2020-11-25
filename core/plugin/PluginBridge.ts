@@ -22,6 +22,10 @@ import {StreamIPC} from '../ipc/StreamIPC.ts';
 import {IPluginInfos} from './IPluginInfos.ts';
 import {IDiscoveredPlugin} from './IDiscoveredPlugins.ts';
 
+/**
+ * Represents a plugin on the side of the core server,
+ * and the ability to communicate with it
+ */
 export class PluginBridge extends StreamIPC {
     /**
      * Process associated with a plugin

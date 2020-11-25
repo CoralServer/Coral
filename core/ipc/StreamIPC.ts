@@ -20,6 +20,10 @@ import Mutex from 'https://deno.land/x/await_mutex@v1.0.1/mod.ts';
 
 import {StreamIPCMessage} from './StreamIPCMessage.ts';
 
+/**
+ * Class handling sending and receiving arbitrary data through a Reader and/or a Writer
+ * Used for IPC between the plugins and the core server using stdin/stdout
+ */
 export class StreamIPC {
     /**
      * Input buffer for storing incoming messages from the process

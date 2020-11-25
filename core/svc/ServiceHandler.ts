@@ -16,6 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * Signature of a method used to handle a service request
+ */
 export type ServiceHandler<T, Ans> = (
     serviceName: string,
     data: T,

@@ -20,6 +20,9 @@ import {ServiceManager} from './ServiceManager.ts';
 import {PluginBridge} from '../plugin/PluginBridge.ts';
 import {PluginServiceCommunicator} from './PluginServiceCommunicator.ts';
 
+/**
+ * Service manager that handles requests from/responses to plugins
+ */
 export class PluginServiceManager extends ServiceManager {
     /**
      * Communicator between the server and plugins through the Service protocol

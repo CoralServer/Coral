@@ -19,17 +19,34 @@
 import {v4} from 'https://deno.land/std@0.79.0/uuid/mod.ts';
 import {Deferred, deferred} from 'https://deno.land/std@0.79.0/async/mod.ts';
 
-import {ServiceMessage, ServiceMessageID} from './ServiceMessage.ts';
+import {IServiceMessage, ServiceMessageID} from './ServiceMessage.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
 import {StreamIPC} from '../ipc/StreamIPC.ts';
 
+/**
+ * Request that is yet to be responded to
+ */
 interface PendingRequest {
-    message: ServiceMessage<any>;
+    /**
+     * Message that was sent to the remote
+     */
+    message: IServiceMessage<any>;
+
+    /**
+     * Promise that the requester is holding to get a response
+     */
     promise: Deferred<any>;
 }
 
+/**
+ * Signature of a method used to respond to a service request
+ */
 type RequestResponder = (serviceName: string, data: any) => Promise<any>;
 
+/**
+ * Implements the Service protocol for the core server/a plugin,
+ * allows sending and receiving Service messages through a StreamIPC
+ */
 export class PluginServiceCommunicator {
     /**
      * Map of requests that are still pending
@@ -68,7 +85,7 @@ export class PluginServiceCommunicator {
         isError: boolean,
         data?: any,
     ): void {
-        const message: ServiceMessage<any> = {
+        const message: IServiceMessage<any> = {
             uuid: uuid,
             serviceName: serviceName,
             isError: isError,
@@ -86,7 +103,7 @@ export class PluginServiceCommunicator {
      */
     public onMessage(
         ipc: StreamIPC,
-        msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>,
+        msg: StreamIPCMessage<ServiceMessageID, IServiceMessage<any>>,
     ): void {
         // We only want to parse Service requests/responses
         if (
@@ -129,7 +146,7 @@ export class PluginServiceCommunicator {
 
         // Now create the request promise
         const requestPromise = deferred<Ans>();
-        const message: ServiceMessage<T> = {
+        const message: IServiceMessage<T> = {
             uuid: v4.generate(),
             serviceName: serviceName,
             isError: false,
@@ -159,7 +176,7 @@ export class PluginServiceCommunicator {
      */
     private handleSvcRequest(
         ipc: StreamIPC,
-        msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>,
+        msg: StreamIPCMessage<ServiceMessageID, IServiceMessage<any>>,
     ): void {
         if (this._requestResponder !== undefined) {
             // Wait for the answer
@@ -200,7 +217,7 @@ export class PluginServiceCommunicator {
      * @private
      */
     private handleSvcResponse(
-        msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>,
+        msg: StreamIPCMessage<ServiceMessageID, IServiceMessage<any>>,
     ): void {
         const pendingRequest: PendingRequest | undefined = this.pendingRequests.get(
             msg.payload.uuid,

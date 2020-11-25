@@ -21,6 +21,9 @@ import * as Path from 'https://deno.land/std@0.79.0/path/mod.ts';
 import {IDiscoveredPlugin} from './IDiscoveredPlugins.ts';
 import {PluginBridge} from './PluginBridge.ts';
 
+/**
+ * Loads discovered plugins
+ */
 export abstract class PluginLoader {
     /**
      * Launch plugins that were previously discovered

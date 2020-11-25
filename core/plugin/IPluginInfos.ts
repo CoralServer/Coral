@@ -16,22 +16,70 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * Permission strings allowed in the "permissions" array of a plugin manifest
+ */
 export type IPluginPermission =
     | 'file-read'
     | 'file-write'
     | 'network'
     | 'hrtime';
 
+/**
+ * Dependency of a plugin as found in the "dependencies" array of a plugin manifest
+ */
 export interface IPluginDependency {
+    /**
+     * ID of the plugin
+     */
     id: string;
+
+    /**
+     * Is this dependency required for the plugin to work?
+     */
     required: boolean;
 }
 
+/**
+ * Information about a plugin as found in its manifest
+ */
 export interface IPluginInfos {
+    /**
+     * ID of the plugin
+     */
     id: string;
+
+    /**
+     * Entry file of the plugin
+     * This is the file that will be executed when the plugin is launched
+     */
     entry: string;
-    minProtocolVersion: number;
+
+    /**
+     * Minimum protocol version this plugin supports
+     * If this value is not present, it will be set to zero
+     */
+    minProtocolVersion?: number;
+
+    /**
+     * Maximum protocol version this plugin supports
+     * If this value is not present, it will be set to +INF
+     */
+    maxProtocolVersion?: number;
+
+    /**
+     * Dependencies of this plugin
+     */
     dependencies: Array<IPluginDependency>;
+
+    /**
+     * Permissions given to the plugin by the Deno runtime
+     */
     permissions: Set<IPluginPermission>;
+
+    /**
+     * Services to be opened by the core server,
+     * for communicating between the core server and the plugin
+     */
     services: Set<string>;
 }

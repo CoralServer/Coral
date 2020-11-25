@@ -16,8 +16,28 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * ID of possible communication error
+ */
+export enum ServiceErrorID {
+    ServiceNotFoundError,
+    TimeoutError,
+}
+
+/**
+ * An error thrown when a service could not be found
+ */
 export class ServiceNotFoundError extends Error {
     constructor() {
         super('The specified service could not be found');
+    }
+}
+
+/**
+ * An error thrown when a request timed-out
+ */
+export class TimeoutError extends Error {
+    constructor() {
+        super('The request timed-out');
     }
 }

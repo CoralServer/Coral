@@ -18,6 +18,10 @@
 
 import {ServiceHandler} from './ServiceHandler.ts';
 
+/**
+ * Basic service manager
+ * Maps a service name to a callback managing the specified service
+ */
 export class ServiceManager {
     /**
      * Map of opened services

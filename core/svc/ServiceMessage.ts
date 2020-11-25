@@ -16,14 +16,76 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * Message ID used as the id of a StreamIPCMessage
+ */
+import {ServiceErrorID} from './ServiceError.ts';
+
 export enum ServiceMessageID {
+    /**
+     * ID for a service request
+     */
     SvcRequest,
+
+    /**
+     * ID for a service response
+     */
     SvcResponse,
 }
 
-export interface ServiceMessage<T> {
+/**
+ * An IServiceMessage with the error flag unset
+ */
+interface IServiceMessageNoError<T> {
+    /**
+     * UUID of this message
+     * This is used to link a response to its request
+     */
     uuid: string;
+
+    /**
+     * Name of the requested service
+     */
     serviceName: string;
-    isError: boolean;
+
+    /**
+     * Used in response, set to false when there was no error
+     */
+    isError: false;
+
+    /**
+     * Data of the request/response
+     */
     data?: T;
 }
+
+/**
+ * An IServiceMessage with the error flag set
+ */
+interface IServiceMessageError {
+    /**
+     * UUID of this message
+     * This is used to link a response to its request
+     */
+    uuid: string;
+
+    /**
+     * Name of the requested service
+     */
+    serviceName: string;
+
+    /**
+     * Used in a response, set to true when there was an error
+     */
+    isError: true;
+
+    /**
+     * ID of the error that has occurred
+     */
+    data: ServiceErrorID;
+}
+
+/**
+ * Message data used as the payload of a StreamIPCMessage
+ */
+export type IServiceMessage<T> = IServiceMessageNoError<T> | IServiceMessageError;

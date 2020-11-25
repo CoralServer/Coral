@@ -18,7 +18,17 @@
 
 import {IPluginInfos} from './IPluginInfos.ts';
 
+/**
+ * Data about a plugin that was found by PluginDiscoverer
+ */
 export interface IDiscoveredPlugin {
+    /**
+     * Path to the base directory of the plugin
+     */
     path: string;
+
+    /**
+     * Information about this plugin, from its manifest file
+     */
     infos: IPluginInfos;
 }

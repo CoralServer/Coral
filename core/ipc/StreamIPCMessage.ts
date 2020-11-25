@@ -16,7 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * Message format sent by StreamIPC
+ */
 export interface StreamIPCMessage<IdType extends number, PayloadType> {
+    /**
+     * Message type (must be a number)
+     */
     id: IdType;
+
+    /**
+     * Message data (can be arbitrary)
+     */
     payload: PayloadType;
 }

@@ -20,6 +20,9 @@ import * as Path from 'https://deno.land/std@0.79.0/path/mod.ts';
 
 import {IDiscoveredPlugin} from './IDiscoveredPlugins.ts';
 
+/**
+ * Discovers plugin
+ */
 export abstract class PluginDiscoverer {
     /**
      * Discover plugins from the filesystem
