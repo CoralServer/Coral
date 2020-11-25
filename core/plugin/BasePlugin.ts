@@ -18,17 +18,47 @@
 
 import {StreamIPC} from '../ipc/StreamIPC.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
+import {PluginServiceCommunicator} from '../svc/PluginServiceCommunicator.ts';
 
 export abstract class BasePlugin extends StreamIPC {
+    /**
+     * Communicator between the plugin and the server through the Service protocol
+     */
+    protected pluginServiceCommunicator: PluginServiceCommunicator = new PluginServiceCommunicator();
+
+    /**
+     * Constructor for the BasePlugin base class
+     * @protected
+     */
     protected constructor() {
         super(Deno.stdin, Deno.stdout);
 
         // Register message handler
         this.addMessageListener(this.onMessage.bind(this));
 
+        // Setup the service communicator
+        this.addMessageListener(this.pluginServiceCommunicator.onMessage.bind(this.pluginServiceCommunicator, this));
+        this.pluginServiceCommunicator.requestResponder = this.onServiceRequest.bind(this);
+
         // Start receiving
         this.recv();
     }
 
-    protected abstract onMessage(msg: StreamIPCMessage<any, any>): void;
+    /**
+     * Method called when receiving a message
+     * @protected
+     */
+    protected onMessage(msg: StreamIPCMessage<any, any>): void {
+    }
+
+    /**
+     * Method called when we receive a service request
+     * @param serviceName Name of the service that was requested
+     * @param data Data of the request
+     * @returns The data to reply to this request
+     * @protected
+     */
+    protected onServiceRequest(serviceName: string, data: any): Promise<any> {
+        return Promise.reject();
+    }
 }

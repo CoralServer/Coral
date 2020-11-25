@@ -18,14 +18,8 @@
 
 import {StreamIPCMessage} from '../../core/ipc/StreamIPCMessage.ts';
 import {BasePlugin} from '../../core/plugin/BasePlugin.ts';
-import {PluginServiceCommunicator} from '../../core/svc/PluginServiceCommunicator.ts';
 
 export class Plugin1 extends BasePlugin {
-    /**
-     * Communicator between the plugin and the server through the Service protocol
-     */
-    private pluginServiceCommunicator: PluginServiceCommunicator = new PluginServiceCommunicator();
-
     /**
      * Some member variable...
      * @private
@@ -37,20 +31,6 @@ export class Plugin1 extends BasePlugin {
      */
     public constructor() {
         super();
-
-        // Setup the service communicator
-        this.addMessageListener(this.pluginServiceCommunicator.onMessage.bind(this.pluginServiceCommunicator, this));
-        this.pluginServiceCommunicator.requestResponder = this.onServiceRequest.bind(this);
-
-        for (let i = 0; i < 10000; ++i) {
-            this.pluginServiceCommunicator.send(this, 'coral:base.ping', i)
-                .then((value) => {
-                    console.error(value + ' is good');
-                })
-                .catch((reason) => {
-                    console.error(i + ' is NOT good: ' + reason);
-                });
-        }
     }
 
     /**
