@@ -25,7 +25,7 @@ export enum ServiceMessageID {
     /**
      * ID for a service request
      */
-    SvcRequest,
+    SvcRequest = 0xE100,
 
     /**
      * ID for a service response
