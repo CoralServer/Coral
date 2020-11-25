@@ -20,6 +20,11 @@ import {StreamIPC} from '../ipc/StreamIPC.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
 import {PluginServiceCommunicator} from '../svc/PluginServiceCommunicator.ts';
 
+/**
+ * Base class for plugins
+ * This class handles communication with the core server using StreamIPC,
+ * and implements the Service protocol using a PluginServiceCommunicator
+ */
 export abstract class BasePlugin extends StreamIPC {
     /**
      * Communicator between the plugin and the server through the Service protocol
@@ -67,5 +72,15 @@ export abstract class BasePlugin extends StreamIPC {
      */
     protected onServiceRequest(serviceName: string, data: any): Promise<any> {
         return Promise.reject();
+    }
+
+    /**
+     * Sends a request to the named service through the core server
+     * @param serviceName Name of the service to request
+     * @param data Data of the request
+     * @protected
+     */
+    protected svcSendRequest(serviceName: string, data: any): Promise<any> {
+        return this.pluginServiceCommunicator.send(this, serviceName, data);
     }
 }

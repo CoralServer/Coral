@@ -25,22 +25,19 @@ export class Plugin2 extends BasePlugin {
     public constructor() {
         super();
 
-        this.pluginServiceCommunicator.send(
-            this,
+        this.svcSendRequest(
             'coral:base.log',
             '[Plugin2] Attempting to communicate with Plugin1',
         );
-        this.pluginServiceCommunicator.send(this, 'coral:test.power', 6)
+        this.svcSendRequest('coral:test.power', 6)
             .then((value) => {
-                this.pluginServiceCommunicator.send(
-                    this,
+                this.svcSendRequest(
                     'coral:base.log',
                     '[Plugin2] Got value: ' + value,
                 );
             })
             .catch((reason) => {
-                this.pluginServiceCommunicator.send(
-                    this,
+                this.svcSendRequest(
                     'coral:base.log',
                     '[Plugin2] Err: ' + reason,
                 );
