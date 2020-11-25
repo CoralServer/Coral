@@ -105,9 +105,6 @@ export class StreamIPC {
      * @private
      */
     public async send<Ids extends number, T>(msg: StreamIPCMessage<Ids, T>): Promise<number> {
-        // Acquire mutex
-        const id = await this.writeMutex.acquire();
-
         // Check that we have a writer
         if (this._writer === undefined) {
             return Promise.reject();
@@ -115,6 +112,9 @@ export class StreamIPC {
 
         // Stringify the message to send
         const msgString: string = JSON.stringify(msg) + '\0';
+
+        // Acquire mutex
+        const id = await this.writeMutex.acquire();
 
         // Send the message
         let p: number | undefined;
@@ -166,7 +166,8 @@ export class StreamIPC {
 
                     this.currentMessage += decodedString.substring(start);
                 }
-
+            })
+            .finally(() => {
                 // Receive once again
                 this.recv();
             });

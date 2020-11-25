@@ -17,6 +17,7 @@
 */
 
 import {v4} from 'https://deno.land/std@0.79.0/uuid/mod.ts';
+import {deferred, Deferred} from 'https://deno.land/std@0.79.0/async/mod.ts';
 
 import {ServiceMessage, ServiceMessageID} from './ServiceMessage.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
@@ -24,8 +25,7 @@ import {StreamIPC} from '../ipc/StreamIPC.ts';
 
 interface PendingRequest {
     message: ServiceMessage<any>,
-    resolve: (value: any) => void,
-    reject: (value: any) => void,
+    promise: Deferred<any>,
 }
 
 type RequestResponder = (serviceName: string, data: any) => Promise<any>;
@@ -104,31 +104,30 @@ export class PluginServiceCommunicator {
             const id = setTimeout(() => {
                 // Reject the promise after 5s
                 clearTimeout(id);
-                reject('Timed out');
+                reject('Timed out (' + data + ')');
             }, 2000);
         });
 
-        let requestPromise: Promise<Ans> = new Promise<Ans>((resolve, reject) => {
-            const message: ServiceMessage<T> = {
-                uuid: v4.generate(),
-                serviceName: serviceName,
-                isError: false,
-                data: data,
-            };
+        // Now create the request promise
+        const requestPromise = deferred<Ans>();
+        const message: ServiceMessage<T> = {
+            uuid: v4.generate(),
+            serviceName: serviceName,
+            isError: false,
+            data: data,
+        };
 
-            // Send the request to the plugin
-            ipc.send({id: ServiceMessageID.SvcRequest, payload: message})
-                .then(() => {
-                    this.pendingRequests.set(message.uuid, {
-                        message: message,
-                        resolve: resolve,
-                        reject: reject,
-                    });
-                })
-                .catch(reason => {
-                    reject(reason);
-                });
+        // Add the pending request to the map
+        this.pendingRequests.set(message.uuid, {
+            message: message,
+            promise: requestPromise,
         });
+
+        // Send the request to the plugin
+        ipc.send({id: ServiceMessageID.SvcRequest, payload: message})
+            .catch(reason => {
+                requestPromise.reject(reason);
+            });
 
         return Promise.race([timeoutPromise, requestPromise]);
     }
@@ -164,12 +163,13 @@ export class PluginServiceCommunicator {
      */
     private handleSvcResponse(msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
         const pendingRequest: PendingRequest | undefined = this.pendingRequests.get(msg.payload.uuid);
+
         if (pendingRequest !== undefined) {
             // Resolve the request with the response
             if (!msg.payload.isError) {
-                pendingRequest.resolve(msg.payload.data);
+                pendingRequest.promise.resolve(msg.payload.data);
             } else {
-                pendingRequest.reject(msg.payload.data);
+                pendingRequest.promise.reject(msg.payload.data);
             }
 
             this.pendingRequests.delete(msg.payload.uuid);
