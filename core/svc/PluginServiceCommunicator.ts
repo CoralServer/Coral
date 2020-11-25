@@ -37,6 +37,11 @@ interface PendingRequest {
      * Promise that the requester is holding to get a response
      */
     promise: Deferred<any>;
+
+    /**
+     * ID of the timeout
+     */
+    timeoutID?: number;
 }
 
 /**
@@ -143,15 +148,7 @@ export class PluginServiceCommunicator {
         serviceName: string,
         data: T,
     ): Promise<Ans> {
-        let timeoutPromise: Promise<Ans> = new Promise<Ans>((resolve, reject) => {
-            const id = setTimeout(() => {
-                // Reject the promise after 5s
-                clearTimeout(id);
-                reject(ServiceErrorID.RequestTimeoutError);
-            }, PluginServiceCommunicator.REQUEST_TIMEOUT_MS);
-        });
-
-        // Now create the request promise
+        // Create the request promise
         const requestPromise = deferred<Ans>();
         const message: IServiceMessage<T> = {
             uuid: v4.generate(),
@@ -171,6 +168,24 @@ export class PluginServiceCommunicator {
             .catch((reason) => {
                 requestPromise.reject(reason);
             });
+
+
+        // Create the timeout
+        let timeoutPromise: Promise<Ans> = new Promise<Ans>((resolve, reject) => {
+            const id: number = setTimeout(() => {
+                // Reject the promise after the timeout passed
+                reject(ServiceErrorID.RequestTimeoutError);
+
+                // Remove the pending request
+                this.pendingRequests.delete(message.uuid);
+            }, PluginServiceCommunicator.REQUEST_TIMEOUT_MS);
+
+            // Store the timeout ID
+            const pendingRequest: PendingRequest | undefined = this.pendingRequests.get(message.uuid);
+            if (pendingRequest !== undefined) {
+                pendingRequest.timeoutID = id;
+            }
+        });
 
         return Promise.race([timeoutPromise, requestPromise]);
     }
@@ -231,6 +246,9 @@ export class PluginServiceCommunicator {
         );
 
         if (pendingRequest !== undefined) {
+            // Clear the timeout associated with the pending request
+            clearTimeout(pendingRequest.timeoutID);
+
             // Resolve the request with the response
             if (!msg.payload.isError) {
                 pendingRequest.promise.resolve(msg.payload.data);
@@ -238,6 +256,7 @@ export class PluginServiceCommunicator {
                 pendingRequest.promise.reject(msg.payload.data);
             }
 
+            // Remove the pending request
             this.pendingRequests.delete(msg.payload.uuid);
         }
     }
