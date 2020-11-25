@@ -52,9 +52,9 @@ export abstract class PluginDiscoverer {
 
         // Log discovered plugins
         console.log('[PluginDiscoverer] Discovered ' + discoveredPlugins.length + ' plugins:');
-        discoveredPlugins.every(value => {
-            console.log('\t- ' + value.infos.id);
-        });
+        for (const plugin of discoveredPlugins) {
+            console.log('\t- ' + plugin.infos.id);
+        }
 
         return discoveredPlugins;
     }
