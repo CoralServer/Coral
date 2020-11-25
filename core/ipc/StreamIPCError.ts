@@ -17,28 +17,16 @@
 */
 
 /**
- * ID of possible communication errors
+ * ID of possible StreamIPC errors
  */
-import {StreamIPCError} from '../ipc/StreamIPCError.ts';
-
-export enum ServiceErrorID {
+export enum StreamIPCError {
     /**
-     * The core server could not find the specified service name
+     * There was no writer to send the message
      */
-    ServiceNotFoundError = 0xF100,
+    NoWriterError = 0xF000,
 
     /**
-     * The handler for the specified service name did not handle the service
+     * An error occurred while writing the message
      */
-    ServiceNotHandledError,
-
-    /**
-     * The request has timed-out
-     */
-    RequestTimeoutError,
+    WriterError
 }
-
-/**
- * ID of all the possible errors in the communication chain
- */
-export type ServiceError = ServiceErrorID | StreamIPCError;

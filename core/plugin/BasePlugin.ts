@@ -19,6 +19,7 @@
 import {StreamIPC} from '../ipc/StreamIPC.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
 import {PluginServiceCommunicator} from '../svc/PluginServiceCommunicator.ts';
+import {ServiceErrorID} from '../svc/ServiceError.ts';
 
 /**
  * Base class for plugins
@@ -71,7 +72,7 @@ export abstract class BasePlugin extends StreamIPC {
      * @protected
      */
     protected onServiceRequest(serviceName: string, data: any): Promise<any> {
-        return Promise.reject();
+        return Promise.reject(ServiceErrorID.ServiceNotHandledError);
     }
 
     /**

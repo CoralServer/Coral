@@ -22,6 +22,7 @@ import {Deferred, deferred} from 'https://deno.land/std@0.79.0/async/mod.ts';
 import {IServiceMessage, ServiceMessageID} from './ServiceMessage.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
 import {StreamIPC} from '../ipc/StreamIPC.ts';
+import {ServiceErrorID} from './ServiceError.ts';
 
 /**
  * Request that is yet to be responded to
@@ -48,6 +49,12 @@ type RequestResponder = (serviceName: string, data: any) => Promise<any>;
  * allows sending and receiving Service messages through a StreamIPC
  */
 export class PluginServiceCommunicator {
+    /**
+     * Time in milliseconds before a request has timed-out
+     * @private
+     */
+    private static readonly REQUEST_TIMEOUT_MS: number = 5000;
+
     /**
      * Map of requests that are still pending
      * @private
@@ -140,8 +147,8 @@ export class PluginServiceCommunicator {
             const id = setTimeout(() => {
                 // Reject the promise after 5s
                 clearTimeout(id);
-                reject('Timed out (' + data + ')');
-            }, 2000);
+                reject(ServiceErrorID.RequestTimeoutError);
+            }, PluginServiceCommunicator.REQUEST_TIMEOUT_MS);
         });
 
         // Now create the request promise

@@ -19,6 +19,7 @@
 import Mutex from 'https://deno.land/x/await_mutex@v1.0.1/mod.ts';
 
 import {StreamIPCMessage} from './StreamIPCMessage.ts';
+import {StreamIPCError} from './StreamIPCError.ts';
 
 /**
  * Class handling sending and receiving arbitrary data through a Reader and/or a Writer
@@ -120,7 +121,7 @@ export class StreamIPC {
     ): Promise<number> {
         // Check that we have a writer
         if (this._writer === undefined) {
-            return Promise.reject();
+            return Promise.reject(StreamIPCError.NoWriterError);
         }
 
         // Stringify the message to send
@@ -144,7 +145,7 @@ export class StreamIPC {
         if (p !== undefined) {
             return Promise.resolve(p);
         } else {
-            return Promise.reject();
+            return Promise.reject(StreamIPCError.WriterError);
         }
     }
 

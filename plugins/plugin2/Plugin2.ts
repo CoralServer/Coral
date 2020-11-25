@@ -17,6 +17,7 @@
 */
 
 import {BasePlugin} from '../../core/plugin/BasePlugin.ts';
+import {ServiceError} from '../../core/svc/ServiceError.ts';
 
 export class Plugin2 extends BasePlugin {
     /**
@@ -36,7 +37,7 @@ export class Plugin2 extends BasePlugin {
                     '[Plugin2] Got value: ' + value,
                 );
             })
-            .catch((reason) => {
+            .catch((reason: ServiceError) => {
                 this.svcSendRequest(
                     'coral:base.log',
                     '[Plugin2] Err: ' + reason,

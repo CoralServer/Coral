@@ -17,6 +17,7 @@
 */
 
 import {ServiceHandler} from './ServiceHandler.ts';
+import {ServiceErrorID} from './ServiceError.ts';
 
 /**
  * Basic service manager
@@ -61,6 +62,6 @@ export class ServiceManager {
         }
 
         // Return a rejected promise if we can't find the service name
-        return Promise.reject();
+        return Promise.reject(ServiceErrorID.ServiceNotFoundError);
     }
 }
