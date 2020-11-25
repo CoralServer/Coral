@@ -50,7 +50,10 @@ export class StreamIPC {
      * @param reader Reader to receive messages from
      * @param writer Writer to send messages to
      */
-    public constructor(reader: Deno.Reader | undefined, writer: Deno.Writer | undefined) {
+    public constructor(
+        reader: Deno.Reader | undefined,
+        writer: Deno.Writer | undefined,
+    ) {
         this._reader = reader;
         this._writer = writer;
     }
@@ -87,7 +90,9 @@ export class StreamIPC {
      * Adds a listener for incoming messages
      * @param listener Listener to add
      */
-    public addMessageListener(listener: (msg: StreamIPCMessage<any, any>) => void) {
+    public addMessageListener(
+        listener: (msg: StreamIPCMessage<any, any>) => void,
+    ) {
         this.onMessageCb.push(listener);
     }
 
@@ -95,8 +100,10 @@ export class StreamIPC {
      * Removes a listener for incoming messages
      * @param listener Listener to remove
      */
-    public removeMessageListener(listener: (msg: StreamIPCMessage<any, any>) => void) {
-        this.onMessageCb = this.onMessageCb.filter(value => value !== listener);
+    public removeMessageListener(
+        listener: (msg: StreamIPCMessage<any, any>) => void,
+    ) {
+        this.onMessageCb = this.onMessageCb.filter((value) => value !== listener);
     }
 
     /**
@@ -104,7 +111,9 @@ export class StreamIPC {
      * @param msg Message to send
      * @private
      */
-    public async send<Ids extends number, T>(msg: StreamIPCMessage<Ids, T>): Promise<number> {
+    public async send<Ids extends number, T>(
+        msg: StreamIPCMessage<Ids, T>,
+    ): Promise<number> {
         // Check that we have a writer
         if (this._writer === undefined) {
             return Promise.reject();
@@ -142,10 +151,12 @@ export class StreamIPC {
         if (this._reader === undefined) return;
 
         this._reader.read(this.recvArray)
-            .then(n => {
+            .then((n) => {
                 if (n) {
                     // We've got some data to process
-                    const decodedString: string = new TextDecoder().decode(this.recvArray.subarray(0, n));
+                    const decodedString: string = new TextDecoder().decode(
+                        this.recvArray.subarray(0, n),
+                    );
 
                     // Loop while we find \0 chars in the string
                     let i: number = 0;
@@ -153,11 +164,14 @@ export class StreamIPC {
                     while ((i = decodedString.indexOf('\0', start)) !== -1) {
                         // We've got an entire message
                         this.currentMessage += decodedString.substring(start, i);
-                        const msg: StreamIPCMessage<any, any> = JSON.parse(this.currentMessage);
+                        const msg: StreamIPCMessage<any, any> = JSON.parse(
+                            this.currentMessage,
+                        );
 
                         // Call the message callbacks
-                        for (const value of this.onMessageCb)
+                        for (const value of this.onMessageCb) {
                             value(msg);
+                        }
 
                         // Reset the message, start over
                         this.currentMessage = '';

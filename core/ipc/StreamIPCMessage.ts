@@ -17,6 +17,6 @@
 */
 
 export interface StreamIPCMessage<IdType extends number, PayloadType> {
-    id: IdType,
-    payload: PayloadType
+    id: IdType;
+    payload: PayloadType;
 }

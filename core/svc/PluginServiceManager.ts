@@ -24,7 +24,8 @@ export class PluginServiceManager extends ServiceManager {
     /**
      * Communicator between the server and plugins through the Service protocol
      */
-    readonly serviceCommunicator: PluginServiceCommunicator = new PluginServiceCommunicator();
+    readonly serviceCommunicator: PluginServiceCommunicator =
+        new PluginServiceCommunicator();
 
     /**
      * Constructor of the PluginServiceManager class
@@ -33,7 +34,9 @@ export class PluginServiceManager extends ServiceManager {
         super();
 
         // Set the request responder of the service communicator
-        this.serviceCommunicator.requestResponder = this.onServiceRequest.bind(this);
+        this.serviceCommunicator.requestResponder = this.onServiceRequest.bind(
+            this,
+        );
     }
 
     /**
@@ -41,7 +44,10 @@ export class PluginServiceManager extends ServiceManager {
      * @param serviceManager Service manager managing the services
      * @param plugins Map of plugin to open services
      */
-    public static openFromPlugins(serviceManager: PluginServiceManager, plugins: Map<string, PluginBridge>): void {
+    public static openFromPlugins(
+        serviceManager: PluginServiceManager,
+        plugins: Map<string, PluginBridge>,
+    ): void {
         console.log('[PluginServiceManager] Opening plugin services...');
         for (const plugin of plugins.values()) {
             serviceManager.openFromPlugin(plugin);
@@ -56,11 +62,16 @@ export class PluginServiceManager extends ServiceManager {
      */
     public openFromPlugin(plugin: PluginBridge): void {
         for (const service of plugin.pluginInfos.services.keys()) {
-            this.open(service, this.serviceCommunicator.send.bind(this.serviceCommunicator, plugin));
+            this.open(
+                service,
+                this.serviceCommunicator.send.bind(this.serviceCommunicator, plugin),
+            );
         }
 
         // Add listener to handle svc messages
-        plugin.addMessageListener(this.serviceCommunicator.onMessage.bind(this.serviceCommunicator, plugin));
+        plugin.addMessageListener(
+            this.serviceCommunicator.onMessage.bind(this.serviceCommunicator, plugin),
+        );
     }
 
     /**

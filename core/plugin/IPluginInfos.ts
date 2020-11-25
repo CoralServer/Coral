@@ -16,18 +16,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export type IPluginPermission = 'file-read' | 'file-write' | 'network' | 'hrtime';
+export type IPluginPermission =
+    | 'file-read'
+    | 'file-write'
+    | 'network'
+    | 'hrtime';
 
 export interface IPluginDependency {
-    id: string,
-    required: boolean,
+    id: string;
+    required: boolean;
 }
 
 export interface IPluginInfos {
-    id: string,
-    entry: string,
-    minProtocolVersion: number,
-    dependencies: Array<IPluginDependency>,
-    permissions: Set<IPluginPermission>,
-    services: Set<string>,
+    id: string;
+    entry: string;
+    minProtocolVersion: number;
+    dependencies: Array<IPluginDependency>;
+    permissions: Set<IPluginPermission>;
+    services: Set<string>;
 }

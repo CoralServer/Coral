@@ -46,16 +46,22 @@ export class PluginBridge extends StreamIPC {
         let pluginCmd: Array<string> = ['deno', 'run'];
 
         // Add permissions
-        if (discoveredPlugin.infos.permissions.has('file-read'))
+        if (discoveredPlugin.infos.permissions.has('file-read')) {
             pluginCmd.push('--allow-read=./');
-        if (discoveredPlugin.infos.permissions.has('file-write'))
+        }
+        if (discoveredPlugin.infos.permissions.has('file-write')) {
             pluginCmd.push('--allow-write=./');
-        if (discoveredPlugin.infos.permissions.has('hrtime'))
+        }
+        if (discoveredPlugin.infos.permissions.has('hrtime')) {
             pluginCmd.push('--allow-hrtime');
-        if (discoveredPlugin.infos.permissions.has('network'))
+        }
+        if (discoveredPlugin.infos.permissions.has('network')) {
             pluginCmd.push('--allow-net');
+        }
 
-        pluginCmd.push(Path.join(discoveredPlugin.path, discoveredPlugin.infos.entry));
+        pluginCmd.push(
+            Path.join(discoveredPlugin.path, discoveredPlugin.infos.entry),
+        );
 
         // Launch the subprocess
         this.pluginProcess = Deno.run({
@@ -65,11 +71,13 @@ export class PluginBridge extends StreamIPC {
         });
 
         // Update reader & writer
-        if (this.pluginProcess.stdout !== null)
+        if (this.pluginProcess.stdout !== null) {
             this.reader = this.pluginProcess.stdout;
+        }
 
-        if (this.pluginProcess.stdin !== null)
+        if (this.pluginProcess.stdin !== null) {
             this.writer = this.pluginProcess.stdin;
+        }
 
         // Start receiving
         this.recv();

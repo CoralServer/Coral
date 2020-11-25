@@ -24,7 +24,8 @@ export abstract class BasePlugin extends StreamIPC {
     /**
      * Communicator between the plugin and the server through the Service protocol
      */
-    protected pluginServiceCommunicator: PluginServiceCommunicator = new PluginServiceCommunicator();
+    protected pluginServiceCommunicator: PluginServiceCommunicator =
+        new PluginServiceCommunicator();
 
     /**
      * Constructor for the BasePlugin base class
@@ -37,8 +38,14 @@ export abstract class BasePlugin extends StreamIPC {
         this.addMessageListener(this.onMessage.bind(this));
 
         // Setup the service communicator
-        this.addMessageListener(this.pluginServiceCommunicator.onMessage.bind(this.pluginServiceCommunicator, this));
-        this.pluginServiceCommunicator.requestResponder = this.onServiceRequest.bind(this);
+        this.addMessageListener(
+            this.pluginServiceCommunicator.onMessage.bind(
+                this.pluginServiceCommunicator,
+                this,
+            ),
+        );
+        this.pluginServiceCommunicator.requestResponder = this.onServiceRequest
+            .bind(this);
 
         // Start receiving
         this.recv();

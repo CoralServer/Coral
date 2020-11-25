@@ -50,9 +50,7 @@ export class Plugin1 extends BasePlugin {
      */
     protected onServiceRequest(serviceName: string, data: any): Promise<any> {
         if (serviceName === 'coral:test.power') {
-            return new Promise<any>(resolve => {
-                resolve(data * data);
-            });
+            return Promise.resolve(data * data);
         }
 
         // No such service, send a rejected promise

@@ -19,6 +19,6 @@
 import {IPluginInfos} from './IPluginInfos.ts';
 
 export interface IDiscoveredPlugin {
-    path: string,
-    infos: IPluginInfos,
+    path: string;
+    infos: IPluginInfos;
 }

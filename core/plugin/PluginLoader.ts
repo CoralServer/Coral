@@ -26,14 +26,18 @@ export abstract class PluginLoader {
      * Launch plugins that were previously discovered
      * @param discoveredPlugins Array of discovered plugins
      */
-    public static loadPlugins(discoveredPlugins: Array<IDiscoveredPlugin>): Map<string, PluginBridge> {
+    public static loadPlugins(
+        discoveredPlugins: Array<IDiscoveredPlugin>,
+    ): Map<string, PluginBridge> {
         let plugins: Map<string, PluginBridge> = new Map<string, PluginBridge>();
 
         for (const discoveredPlugin of discoveredPlugins) {
             // Check if the plugin isn't already present
             if (plugins.has(discoveredPlugin.infos.id)) {
-                console.error('[PluginLoader] A plugin with a duplicate id has been found: ' +
-                    discoveredPlugin.infos.id);
+                console.error(
+                    '[PluginLoader] A plugin with a duplicate id has been found: ' +
+                    discoveredPlugin.infos.id,
+                );
                 console.error('\tPath: ' + discoveredPlugin.path);
 
                 Deno.exit();
@@ -41,10 +45,15 @@ export abstract class PluginLoader {
 
             // Check if the entry point is an existing file
             try {
-                Deno.lstatSync(Path.join(discoveredPlugin.path, discoveredPlugin.infos.entry));
+                Deno.lstatSync(
+                    Path.join(discoveredPlugin.path, discoveredPlugin.infos.entry),
+                );
             } catch (e) {
-                console.error('[PluginLoader] Entry point for plugin "' + discoveredPlugin.infos.id +
-                    '" does not exist');
+                console.error(
+                    '[PluginLoader] Entry point for plugin "' +
+                    discoveredPlugin.infos.id +
+                    '" does not exist',
+                );
 
                 Deno.exit();
             }
@@ -52,7 +61,10 @@ export abstract class PluginLoader {
             // TODO: Build dependency graph and load plugins in order
 
             // Launch the plugin
-            plugins.set(discoveredPlugin.infos.id, new PluginBridge(discoveredPlugin));
+            plugins.set(
+                discoveredPlugin.infos.id,
+                new PluginBridge(discoveredPlugin),
+            );
         }
 
         // Log success

@@ -51,7 +51,9 @@ export abstract class PluginDiscoverer {
         }
 
         // Log discovered plugins
-        console.log('[PluginDiscoverer] Discovered ' + discoveredPlugins.length + ' plugins:');
+        console.log(
+            '[PluginDiscoverer] Discovered ' + discoveredPlugins.length + ' plugins:',
+        );
         for (const plugin of discoveredPlugins) {
             console.log('\t- ' + plugin.infos.id);
         }

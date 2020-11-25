@@ -16,4 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export type ServiceHandler<T, Ans> = (serviceName: string, data: T) => Promise<Ans>;
+export type ServiceHandler<T, Ans> = (
+    serviceName: string,
+    data: T,
+) => Promise<Ans>;

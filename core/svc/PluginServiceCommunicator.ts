@@ -17,15 +17,15 @@
 */
 
 import {v4} from 'https://deno.land/std@0.79.0/uuid/mod.ts';
-import {deferred, Deferred} from 'https://deno.land/std@0.79.0/async/mod.ts';
+import {Deferred, deferred} from 'https://deno.land/std@0.79.0/async/mod.ts';
 
 import {ServiceMessage, ServiceMessageID} from './ServiceMessage.ts';
 import {StreamIPCMessage} from '../ipc/StreamIPCMessage.ts';
 import {StreamIPC} from '../ipc/StreamIPC.ts';
 
 interface PendingRequest {
-    message: ServiceMessage<any>,
-    promise: Deferred<any>,
+    message: ServiceMessage<any>;
+    promise: Deferred<any>;
 }
 
 type RequestResponder = (serviceName: string, data: any) => Promise<any>;
@@ -35,7 +35,8 @@ export class PluginServiceCommunicator {
      * Map of requests that are still pending
      * @private
      */
-    private pendingRequests: Map<string, PendingRequest> = new Map<string, PendingRequest>();
+    private pendingRequests: Map<string, PendingRequest> = new Map<string,
+        PendingRequest>();
 
     /**
      * Method to call when we get a Service request
@@ -60,7 +61,13 @@ export class PluginServiceCommunicator {
      * @param data Response data
      * @private
      */
-    private static sendResponse(ipc: StreamIPC, uuid: string, serviceName: string, isError: boolean, data?: any): void {
+    private static sendResponse(
+        ipc: StreamIPC,
+        uuid: string,
+        serviceName: string,
+        isError: boolean,
+        data?: any,
+    ): void {
         const message: ServiceMessage<any> = {
             uuid: uuid,
             serviceName: serviceName,
@@ -77,9 +84,17 @@ export class PluginServiceCommunicator {
      * @param ipc Source of the message
      * @param msg Incoming message
      */
-    public onMessage(ipc: StreamIPC, msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
+    public onMessage(
+        ipc: StreamIPC,
+        msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>,
+    ): void {
         // We only want to parse Service requests/responses
-        if (msg.id !== ServiceMessageID.SvcRequest && msg.id !== ServiceMessageID.SvcResponse) return;
+        if (
+            msg.id !== ServiceMessageID.SvcRequest &&
+            msg.id !== ServiceMessageID.SvcResponse
+        ) {
+            return;
+        }
 
         // Check that we've got a UUID
         if (typeof msg.payload.uuid === 'string') {
@@ -99,7 +114,11 @@ export class PluginServiceCommunicator {
      * @param serviceName Name of the service to dispatch the data to
      * @param data Data to dispatch
      */
-    public send<T, Ans>(ipc: StreamIPC, serviceName: string, data: T): Promise<Ans> {
+    public send<T, Ans>(
+        ipc: StreamIPC,
+        serviceName: string,
+        data: T,
+    ): Promise<Ans> {
         let timeoutPromise: Promise<Ans> = new Promise<Ans>((resolve, reject) => {
             const id = setTimeout(() => {
                 // Reject the promise after 5s
@@ -125,7 +144,7 @@ export class PluginServiceCommunicator {
 
         // Send the request to the plugin
         ipc.send({id: ServiceMessageID.SvcRequest, payload: message})
-            .catch(reason => {
+            .catch((reason) => {
                 requestPromise.reject(reason);
             });
 
@@ -138,21 +157,40 @@ export class PluginServiceCommunicator {
      * @param msg Incoming message
      * @private
      */
-    private handleSvcRequest(ipc: StreamIPC, msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
+    private handleSvcRequest(
+        ipc: StreamIPC,
+        msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>,
+    ): void {
         if (this._requestResponder !== undefined) {
             // Wait for the answer
             this._requestResponder(msg.payload.serviceName, msg.payload.data)
-                .then(value => {
+                .then((value) => {
                     // We got a response from the responder, reply with it
-                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, false, value);
+                    PluginServiceCommunicator.sendResponse(
+                        ipc,
+                        msg.payload.uuid,
+                        msg.payload.serviceName,
+                        false,
+                        value,
+                    );
                 })
                 .catch(() => {
                     // Request responder failed, reply with undefined data
-                    PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, true);
+                    PluginServiceCommunicator.sendResponse(
+                        ipc,
+                        msg.payload.uuid,
+                        msg.payload.serviceName,
+                        true,
+                    );
                 });
         } else {
             // We don't have a request responder, reply with undefined data
-            PluginServiceCommunicator.sendResponse(ipc, msg.payload.uuid, msg.payload.serviceName, true);
+            PluginServiceCommunicator.sendResponse(
+                ipc,
+                msg.payload.uuid,
+                msg.payload.serviceName,
+                true,
+            );
         }
     }
 
@@ -161,8 +199,12 @@ export class PluginServiceCommunicator {
      * @param msg Incoming message
      * @private
      */
-    private handleSvcResponse(msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>): void {
-        const pendingRequest: PendingRequest | undefined = this.pendingRequests.get(msg.payload.uuid);
+    private handleSvcResponse(
+        msg: StreamIPCMessage<ServiceMessageID, ServiceMessage<any>>,
+    ): void {
+        const pendingRequest: PendingRequest | undefined = this.pendingRequests.get(
+            msg.payload.uuid,
+        );
 
         if (pendingRequest !== undefined) {
             // Resolve the request with the response

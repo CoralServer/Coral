@@ -23,7 +23,8 @@ export class ServiceManager {
      * Map of opened services
      * @private
      */
-    protected services: Map<string, ServiceHandler<any, any>> = new Map<string, ServiceHandler<any, any>>();
+    protected services: Map<string, ServiceHandler<any, any>> = new Map<string,
+        ServiceHandler<any, any>>();
 
     /**
      * Opens a new service
@@ -48,7 +49,9 @@ export class ServiceManager {
      * @param data Data to send to the service
      */
     public dispatch(serviceName: string, data: any): Promise<any> {
-        const service: ServiceHandler<any, any> | undefined = this.services.get(serviceName);
+        const service: ServiceHandler<any, any> | undefined = this.services.get(
+            serviceName,
+        );
         if (service !== undefined) {
             return service(serviceName, data);
         }
