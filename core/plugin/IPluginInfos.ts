@@ -46,12 +46,14 @@ export interface IPluginDependency {
 export interface IPluginInfos {
     /**
      * ID of the plugin
+     * ** This field is mandatory **
      */
     id: string;
 
     /**
      * Entry file of the plugin
      * This is the file that will be executed when the plugin is launched
+     * ** This field is mandatory **
      */
     entry: string;
 
@@ -59,16 +61,17 @@ export interface IPluginInfos {
      * Minimum protocol version this plugin supports
      * If this value is not present, it will be set to zero
      */
-    minProtocolVersion?: number;
+    minProtocolVersion: number;
 
     /**
      * Maximum protocol version this plugin supports
      * If this value is not present, it will be set to +INF
      */
-    maxProtocolVersion?: number;
+    maxProtocolVersion: number;
 
     /**
      * Dependencies of this plugin
+     * Can be omitted if there are no dependencies
      */
     dependencies: Array<IPluginDependency>;
 

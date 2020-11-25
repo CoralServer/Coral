@@ -20,6 +20,7 @@ import * as Path from 'https://deno.land/std@0.79.0/path/mod.ts';
 
 import {IDiscoveredPlugin} from './IDiscoveredPlugins.ts';
 import {PluginBridge} from './PluginBridge.ts';
+import {Utils} from '../Utils.ts';
 
 /**
  * Loads discovered plugins
@@ -41,9 +42,7 @@ export abstract class PluginLoader {
                     '[PluginLoader] A plugin with a duplicate id has been found: ' +
                     discoveredPlugin.infos.id,
                 );
-                console.error('\tPath: ' + discoveredPlugin.path);
-
-                Deno.exit();
+                Utils.panic('\tPath: ' + discoveredPlugin.path);
             }
 
             // Check if the entry point is an existing file
@@ -52,13 +51,7 @@ export abstract class PluginLoader {
                     Path.join(discoveredPlugin.path, discoveredPlugin.infos.entry),
                 );
             } catch (e) {
-                console.error(
-                    '[PluginLoader] Entry point for plugin "' +
-                    discoveredPlugin.infos.id +
-                    '" does not exist',
-                );
-
-                Deno.exit();
+                Utils.panic('[PluginLoader] Entry point for plugin "' + discoveredPlugin.infos.id + '" does not exist');
             }
 
             // TODO: Build dependency graph and load plugins in order

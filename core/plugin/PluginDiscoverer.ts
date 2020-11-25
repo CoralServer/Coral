@@ -19,6 +19,8 @@
 import * as Path from 'https://deno.land/std@0.79.0/path/mod.ts';
 
 import {IDiscoveredPlugin} from './IDiscoveredPlugins.ts';
+import {Utils} from '../Utils.ts';
+import {PluginManifestVerifier} from './PluginManifestVerifier.ts';
 
 /**
  * Discovers plugin
@@ -38,25 +40,21 @@ export abstract class PluginDiscoverer {
 
             if (dirEntry.isDirectory && Deno.statSync(infosPath)) {
                 // This is a valid plugin
-                discoveredPlugins.push({
-                    path: pluginPath,
-                    infos: JSON.parse(Deno.readTextFileSync(infosPath), (key, value) => {
-                        if (key === 'permissions' || key === 'services') {
-                            // We want unique values in those
-                            return new Set(value);
-                        }
-
-                        // Return the unchanged value by default
-                        return value;
-                    }),
-                });
+                try {
+                    discoveredPlugins.push({
+                        path: pluginPath,
+                        infos: PluginManifestVerifier.convertManifest(Deno.readTextFileSync(infosPath)),
+                    });
+                } catch (e) {
+                    // Unable to load the plugin due to a bad manifest
+                    console.error('[PluginDiscoverer] Error while parsing the manifest for plugin: ' + pluginPath);
+                    Utils.panic(e);
+                }
             }
         }
 
         // Log discovered plugins
-        console.log(
-            '[PluginDiscoverer] Discovered ' + discoveredPlugins.length + ' plugins:',
-        );
+        console.log('[PluginDiscoverer] Discovered ' + discoveredPlugins.length + ' plugins:');
         for (const plugin of discoveredPlugins) {
             console.log('\t- ' + plugin.infos.id);
         }

@@ -2,6 +2,7 @@
   "id": "coral:test",
   "entry": "plugin1.ts",
   "minProtocolVersion": 751,
+  "maxProtocolVersion": 752,
   "dependencies": [
     {
       "required": true,
